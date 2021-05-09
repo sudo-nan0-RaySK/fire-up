@@ -1,9 +1,7 @@
 
-<center>
-
-![alt text](https://fireup.live/wp-content/uploads/2018/12/fireup-logo-2.png)
-
-</center>
+<p align="center">
+<img src="https://fireup.live/wp-content/uploads/2018/12/fireup-logo-2.png">
+</p>
 
 # Fire-Up!
 
@@ -46,7 +44,7 @@ And thats not all, `fire-up` also takes care of initialization and cleanup works
 Every artifact folder needs to have one `fire-up.json` file.
 It's structure looks like this:
 
-```json
+```javascript
 {
     /* can either be 'artifact' or 'component' */
     "type":"artifact",
