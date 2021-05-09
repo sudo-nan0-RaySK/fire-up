@@ -21,6 +21,8 @@ var cfgFile string
 
 var artifactAlias string
 
+var artifactNewName string
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "fire-up",
@@ -33,10 +35,10 @@ No need to have a boilerplate generator for every different type of project!`,
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Print("Bare application ran")
-		if artifactAlias == ""{
+		if artifactAlias == "" {
 			log.Fatal(rootErr)
 		}
-		utils.InitializeProjectFromArtifact(artifactAlias)
+		utils.InitializeProjectFromArtifact(artifactAlias, artifactNewName)
 	},
 }
 
@@ -57,7 +59,8 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.PersistentFlags().StringVar(&artifactAlias, "alias", "", "artifact's alias")
+	rootCmd.PersistentFlags().StringVarP(&artifactAlias, "alias", "a", "", "artifact's alias")
+	rootCmd.PersistentFlags().StringVarP(&artifactNewName, "rename", "r", "", "artifact's name")
 }
 
 // initConfig reads in config file and ENV variables if set.

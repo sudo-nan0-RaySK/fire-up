@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fire-up/types"
 	"fmt"
+	"github.com/lithammer/shortuuid"
 	copy2 "github.com/otiai10/copy"
 	"io/fs"
 	"io/ioutil"
@@ -22,7 +23,8 @@ var ArtifactsFile = ConfigDir + "artifacts.json"
 
 var FireUpConfig = "/fire-up.json"
 
-func InitializeProjectFromArtifact(artifactName string) {
+func InitializeProjectFromArtifact(artifactName string, newName string) {
+	// Searching in local
 	artifactsData, err := ioutil.ReadFile(ArtifactsFile)
 	Must(err, "Error while reading artifacts.json")
 	var artifactRecords types.Artifacts
@@ -30,18 +32,43 @@ func InitializeProjectFromArtifact(artifactName string) {
 		"Error while unmarshalling artifacts.json")
 	for _, artifact := range artifactRecords {
 		if artifact.ArtifactAlias == artifactName {
-			createProject(artifactName, artifact.ArtifactPath)
+			createProject(newName, artifact.ArtifactPath)
 			return
 		}
 	}
-	// TODO: Fetch from github
+	// Searching in private remote
+	CheckAuthenticated()
+	artifactsRepo := GetOrCreateArtifactRepositoryIfNotPresent()
+	artifactPath, err := GetResource(artifactName, *artifactsRepo.ContentsURL)
+	if err!=nil{
+		log.Fatal(err)
+	}
+	if artifactPath!=""{
+		AddArtifact(artifactPath, artifactName)
+		createProject(newName, artifactPath)
+		Must(os.RemoveAll(artifactPath), "Error removing tmp data")
+		return
+	}
+
+	// TODO: Search in global remote
 	log.Fatal("No such artifact found!")
 }
 
 func createProject(artifactName string, artifactPath string) {
-	pathNodes := strings.Split(artifactPath,"/")
-	nodeName := pathNodes[len(pathNodes)-1]
-	Must(copy2.Copy(artifactPath, nodeName, copy2.Options{AddPermission: os.ModePerm}),
+	//pathNodes := strings.Split(artifactPath,"/")
+	nodeName := artifactName
+	cpyOpts := copy2.Options{
+		AddPermission: os.ModePerm,
+		Skip: func(src string) (bool, error) {
+			pathParts := strings.Split(src, "/")
+			file  := pathParts[len(pathParts)-1]
+			if file == "fire-up.json" {
+				return true,nil
+			}
+			return false,nil
+		},
+	}
+	Must(copy2.Copy(artifactPath, nodeName, cpyOpts),
 		"Error copying artifact")
 	configDataRaw, err := ioutil.ReadFile(artifactPath + FireUpConfig)
 	Must(err, "Error occurred while reading fire-up.json")
@@ -51,13 +78,13 @@ func createProject(artifactName string, artifactPath string) {
 	replacementMap := configData.ReplacementList.ConstructReplacementMap()
 	var fileObjects = make([]string, 0)
 	log.Printf("replacementMap %v", replacementMap)
-	Must(filepath.WalkDir(nodeName, getWalkAndCollect(&fileObjects)), "Error initiating WalkDir()")
+	Must(filepath.WalkDir(nodeName, GetWalkAndCollect(&fileObjects)), "Error initiating WalkDir()")
 	for index := range fileObjects{
 		replaceFileOrDir(fileObjects[len(fileObjects)-1-index],replacementMap)
 	}
 }
 
-func getWalkAndCollect(fileObjects *[]string) fs.WalkDirFunc {
+func GetWalkAndCollect(fileObjects *[]string) fs.WalkDirFunc {
 	return func(name string, dir fs.DirEntry, err error) error {
 		if err != nil {
 			log.Fatal("An error occurred while walking project directory recursively", err)
@@ -115,4 +142,77 @@ func replaceFileContents(fileName string, replacementMap map[string]string){
 			"Error replacing file contents")
 		defer Must(fd.Close(), "Error closing file/directory")
 	}
+}
+
+func AddArtifact(artifactPath string, artifactAlias string) {
+	CreateDirectoryIfNotPresent()
+	CreateArtifactsFileIfNotPresent()
+	CheckForConfigFile(artifactPath)
+	// Set artifact alias to be some random UUID
+	if artifactAlias == "" {
+		artifactAlias = shortuuid.New()
+	}
+	// Getting artifact's directory name
+	constructedPath := ConfigDir + artifactAlias
+	//log.Printf("constructed path is :- %s", constructedPath)
+	err := copy2.Copy(artifactPath, constructedPath)
+	if err != nil {
+		log.Fatal("Error while copying artifact!", err)
+	}
+	newArtifact := types.ArtifactEntry{ArtifactAlias: artifactAlias, ArtifactPath: constructedPath}
+	// Check if artifact.json is empty
+	file, _ := os.Stat(ArtifactsFile)
+	// If file is empty
+	if file.Size() == 0 {
+		artifactEntries := make(types.Artifacts, 0)
+		artifactEntries = append(artifactEntries, newArtifact)
+		log.Println(artifactEntries)
+		writeToArtifactsFile(artifactEntries)
+	} else { // If file contains previous entries
+		artifactRecords, _ := ioutil.ReadFile(ArtifactsFile)
+		var artifacts types.Artifacts
+		Must(json.Unmarshal(artifactRecords, &artifacts),
+			"Error while un-marshalling artifacts")
+		artifacts.CheckDuplicateRecords(newArtifact)
+		writeToArtifactsFile(append(artifacts, newArtifact))
+	}
+}
+
+func writeToArtifactsFile(artifactEntries types.Artifacts) {
+	artifactRecords, marshalErr := json.MarshalIndent(artifactEntries,"", "    ")
+	if marshalErr != nil {
+		log.Fatal("Error while marshalling artifacts")
+	}
+	//log.Println("artifact records :-" + string(artifactRecords))
+	writeErr := ioutil.WriteFile(ArtifactsFile, artifactRecords, 0777)
+	if writeErr != nil {
+		log.Fatal("Error while marshalling artifacts")
+	}
+}
+
+func CreateArtifactsFileIfNotPresent() {
+	if _, err := os.Stat(ArtifactsFile); os.IsNotExist(err) {
+		_, err := os.Create(ArtifactsFile)
+		if err != nil {
+			log.Fatal("Error while creating config directory", err)
+		}
+	}
+}
+
+func CreateDirectoryIfNotPresent() {
+	if _, err := os.Stat(ConfigDir); os.IsNotExist(err) {
+		err := os.Mkdir(ConfigDir, 0777)
+		if err != nil {
+			log.Fatal("Error while creating config directory", err)
+		}
+	}
+}
+
+func CheckForConfigFile(artifactPath string){
+	//log.Printf("Searching for ~/.fire-up.json in %s\n", artifactPath + FireUpConfig)
+	configDataRaw, err := ioutil.ReadFile(artifactPath + FireUpConfig)
+	Must(err, "Error occurred while reading fire-up.json")
+	var configData types.Config
+	Must(json.Unmarshal(configDataRaw, &configData),
+		"Error while unmarshalling fire-up.json")
 }
