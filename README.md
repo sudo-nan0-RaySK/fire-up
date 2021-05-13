@@ -11,7 +11,7 @@
 
 Your team assigned you a new task, or you just got blessed with a new groundbreaking idea.  
 The next thing you wanna do is jump right to your computer and start your project. Doesn't matter if its a software project, a word document or just a Notion markdown. 
-The immideate disappointment you get is - Yo have to start with an empty canvas.
+The immediate disappointment you get is - Yo have to start with an empty canvas.
 
 *Who likes an empty canvas? Nobody right?*
 
@@ -21,11 +21,11 @@ The immideate disappointment you get is - Yo have to start with an empty canvas.
 ### So its just another boilerplate generator ?
 
 Whats the use though? There are thousand similar tools and most frameworks nowadays come with project kick-starter anyways.  
-And thats exactly what the problem is, A different generator to manage everything. No customizability and utilized only for software projects (mostly).
+And thats exactly what the problem is, A different generator to manage everything. No customizablity and utilized only for software projects (mostly).
 `fire-up` is a light tool which solves this issue, it is supposed to be used with any kind of project, technical or otherwise.
 
 ### How does it work?
-`fire-up` lets you define you own template, which you can then use as a blue-print to create your project from. You can either store this blue-print on your local machine or upload to github or (s3 - comming soon ) in a private repository, from `fire-up` cli itself.  
+`fire-up` lets you define you own template, which you can then use as a blue-print to create your project from. You can either store this blue-print on your local machine or upload to github or (s3 - coming soon ) in a private repository, from `fire-up` cli itself.  
 You can also use global templates contributed by other people.
 
 #### Some terminology:
@@ -48,7 +48,7 @@ It's structure looks like this:
 {
     /* can either be 'artifact' or 'component' */
     "type":"artifact",
-    /* these are strings those will be replaced globaly */
+    /* these are strings those will be replaced globally */
     "replacements":[
         {
             "placeholder":"VAR__PACKAGE_NAME",
@@ -56,7 +56,7 @@ It's structure looks like this:
         },
         {
             "placeholder":"VAR__ARTIFACT_NAME",
-            "desc":"Enter project/artifcat name"
+            "desc":"Enter project/artifacts name"
         },
         {
             "placeholder":"VAR__MAIN_APP",
@@ -76,10 +76,10 @@ It's structure looks like this:
 fire-up add-local ../Downloads/spring-data-mongo-web-artifact --alias spring-example
 ```
 
-We can then use same alias to instantaite a project out of it:
+We can then use same alias to instantiate a project out of it:
 
 ```bash
-# fire-up -a <artifact-alia> -r <project-name-for-this-project>
+# fire-up -a <artifact-alias> -r <project-name-for-this-project>
 fire-up -a spring-example -r spring-microservice
 ```
 
@@ -88,7 +88,7 @@ This will result in following output:
 > fire-up -a spring-web-data-mongodb -r spring-microservice-example                                                                                 
 
 Enter package name (VAR__PACKAGE_NAME) demo_app
-Enter project/artifcat name (VAR__ARTIFACT_NAME) demo_artifact
+Enter project/artifact name (VAR__ARTIFACT_NAME) demo_artifact
 Enter the file name for entry point. (VAR__MAIN_APP) MainApp
 
 > ls -la | grep spring-microservice-example
@@ -103,9 +103,9 @@ drwxrwxrwx  14 ray  staff   448 May 10 02:57 spring-microservice-example
 2. In your private artifact repo, will create one if not present with name `fire-up-artifacts`
 3. In global repo.
 
-Artifacts retrived from remote sources are cached locally.
+Artifacts retrieved from remote sources are cached locally.
 
-To add artifacts locally:
+To add artifacts to remote repository:
 
 ```bash
 fire-up add-remote ~/dev/spring-data-mongo-web-artifact --alias spring-web-data-mongodb
