@@ -1,0 +1,20 @@
+{
+    "type":"artifact/component",
+    "replacements":[
+        {
+            "placeholder":"VAR__TO_BE_REPLACED",
+            "desc":"This is description that will be prompted on artifact/component initialization"
+        }
+    ],
+    "injections":[
+        {
+            "file_name":"File or directory's name (relative path)",
+            "injection_point":"Point where this file should be injected (relative path)"
+        }
+    ],
+    "commands":[
+        "These will run in newly created project's directory",
+        "Add initialization commands here ...",
+        "npm install, go get etc..."
+    ]
+}
