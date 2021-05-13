@@ -15,7 +15,7 @@ Usage: fire-up add-local <src-directory> --alias <artifact-alias>`
 )
 
 // Value of artifactAliasFlag
-var artifactAliasFlag string
+var artifactAliasFlag = ""
 
 
 // addLocalCmd represents the addLocal command
@@ -27,6 +27,9 @@ var addLocalCmd = &cobra.Command{
 		fmt.Println("add-local called")
 		if len(args) <= 0 {
 			log.Fatal(addLocalErrStr)
+		}
+		if artifactAliasFlag==""{
+			log.Fatal("Giving an alias (--alias <alias-name>) is a must for adding artifacts or components")
 		}
 		artifactPath := args[0]
 		utils.AddArtifact(artifactPath, artifactAliasFlag)

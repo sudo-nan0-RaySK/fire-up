@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"fire-up/types"
 	"fmt"
-	"github.com/lithammer/shortuuid"
-	copy2 "github.com/otiai10/copy"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/lithammer/shortuuid"
+	copy2 "github.com/otiai10/copy"
 )
 
 // ConfigDir Location of the config directory
@@ -81,6 +84,14 @@ func createProject(artifactName string, artifactPath string) {
 	Must(filepath.WalkDir(nodeName, GetWalkAndCollect(&fileObjects)), "Error initiating WalkDir()")
 	for index := range fileObjects{
 		replaceFileOrDir(fileObjects[len(fileObjects)-1-index],replacementMap)
+	}
+	// Running all the initialization commands
+	currDir,err:= os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if configData.CommandList!=nil && len(configData.CommandList)>0{
+		RunCommands(configData.CommandList, currDir+"/"+nodeName)
 	}
 }
 
@@ -216,3 +227,37 @@ func CheckForConfigFile(artifactPath string){
 	Must(json.Unmarshal(configDataRaw, &configData),
 		"Error while unmarshalling fire-up.json")
 }
+
+func RunCommands(commandList []string, targetDir string){
+	numberOfCommands := len(commandList)
+	for index,command := range commandList {
+		fmt.Printf("(#%d of %d) Running command %s",index+1,numberOfCommands,command)
+		cmdArray := strings.Split(command, " ")
+		var cmd *exec.Cmd
+		if len(cmdArray)>1{
+			cmd  = exec.Command(cmdArray[0],cmdArray[1:]...)
+		} else {
+			cmd = exec.Command(cmdArray[0])
+		}
+		cmd.Dir = targetDir
+		Must(cmd.Run(),"Unable to run the initialization command!")
+		//stdoutFromCmd,err := cmd.StdoutPipe()
+		//Must(err,"Error while streaming output for this command")
+		//streamProcessStdOut(stdoutFromCmd)
+	}
+}
+
+func streamProcessStdOut(outStream io.ReadCloser){
+	oneByte := make([]byte, 8)
+	var fullOut string
+	for {
+		_, err := outStream.Read(oneByte)
+		if err != nil {
+			fmt.Printf(err.Error())
+			break
+		}
+		fullOut += string(oneByte)
+	}
+	fmt.Print(fullOut)
+}
+

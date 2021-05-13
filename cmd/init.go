@@ -1,27 +1,17 @@
-/*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
+	"fire-up/utils"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
-const initConfigData := `
+const fireUp = "fire-up.json"
+const initConfigData = `
 {
     "type":"artifact/component",
     "replacements":[
@@ -51,11 +41,21 @@ var initCmd = &cobra.Command{
 	Long: `Adds a fire-up.json file to current working directory.
 	Adding a fire-up.json to a project makes it identifiable as an artifact template by fire-up.
 	`,
-This application is a tool to generate the needed files
 	Run: func(cmd *cobra.Command, args []string) {
-		
-		fmt.Println("Please configure fire-up.json that was added to this directory.")
+		CreateFireUpJsonIfNotPresent()
 	},
+}
+
+func CreateFireUpJsonIfNotPresent() {
+	if _, err := os.Stat(fireUp); os.IsNotExist(err) {
+		_, err := os.Create(fireUp)
+		if err != nil {
+			log.Fatal("Error while creating fire-up.json", err)
+		}
+		utils.Must(ioutil.WriteFile(fireUp,[]byte(initConfigData),os.ModePerm),
+			"Error writing to fire-up.config")
+		fmt.Println("Please configure fire-up.json that was added to this directory.")
+	}
 }
 
 func init() {

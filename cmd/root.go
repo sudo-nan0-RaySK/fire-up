@@ -23,6 +23,8 @@ var artifactAlias string
 
 var artifactNewName string
 
+var addArtifactFlag bool
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "fire-up",
@@ -38,7 +40,11 @@ No need to have a boilerplate generator for every different type of project!`,
 		if artifactAlias == "" {
 			log.Fatal(rootErr)
 		}
-		utils.InitializeProjectFromArtifact(artifactAlias, artifactNewName)
+		if addArtifactFlag{
+			// TODO: Inject component instead
+		} else {
+			utils.InitializeProjectFromArtifact(artifactAlias, artifactNewName)
+		}
 	},
 }
 
@@ -61,6 +67,7 @@ func init() {
 	// when this action is called directly.
 	rootCmd.PersistentFlags().StringVarP(&artifactAlias, "alias", "a", "", "artifact's alias")
 	rootCmd.PersistentFlags().StringVarP(&artifactNewName, "rename", "r", "", "artifact's name")
+	rootCmd.PersistentFlags().BoolVarP(&addArtifactFlag,"add-component","c",false,"Add a component instead of an artifact")
 }
 
 // initConfig reads in config file and ENV variables if set.
