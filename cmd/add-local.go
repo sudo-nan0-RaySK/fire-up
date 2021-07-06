@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fire-up/utils"
-	"fmt"
 	"github.com/spf13/cobra"
 	"log"
 )
@@ -24,7 +23,6 @@ var addLocalCmd = &cobra.Command{
 	Short: "Add a project artifact to local machine",
 	Long:  `Add a project artifact to local machine`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("add-local called")
 		if len(args) <= 0 {
 			log.Fatal(addLocalErrStr)
 		}
